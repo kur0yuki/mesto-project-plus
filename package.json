@@ -1,7 +1,7 @@
 {
   "name": "starterkits",
   "version": "1.0.0",
-  "description": "< Добавьте описание проекта в свободной форме >",
+  "description": "Каркас API проекта Mesto",
   "main": "dist/app.js",
   "scripts": {
     "lint": "npx eslint src/**/*.ts",

@@ -49,7 +49,6 @@ export const deleteCardById = (req: Request, res: Response) => {
 export const addLike = (req: Request, res: Response) => {
   Card.findByIdAndUpdate(req.params.cardId, {
     $addToSet: {
-      // eslint-disable-next-line no-underscore-dangle
       likes: req.user._id,
     },
   }, { new: true }).select(returnedFields).populate('owner', returnedFields)
@@ -65,7 +64,6 @@ export const addLike = (req: Request, res: Response) => {
 export const removeLike = (req: Request, res: Response) => {
   Card.findByIdAndUpdate(req.params.cardId, {
     $pull: {
-      // eslint-disable-next-line no-underscore-dangle
       likes: req.user._id,
     },
   }, { new: true }).select(returnedFields).populate('owner', returnedFields)

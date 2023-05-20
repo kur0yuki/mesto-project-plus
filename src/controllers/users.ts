@@ -47,7 +47,6 @@ export const getUserById = (req: Request, res: Response) => {
 };
 
 export const updateUser = (req: Request, res: Response) => {
-  // eslint-disable-next-line no-underscore-dangle
   const id = req.user._id;
   const { name, about } = req.body;
   User.findByIdAndUpdate(id, { $set: { name, about } }, { new: true }).select(returnedFields)
@@ -61,7 +60,6 @@ export const updateUser = (req: Request, res: Response) => {
 };
 
 export const updateUserAvatar = (req: Request, res: Response) => {
-  // eslint-disable-next-line no-underscore-dangle
   const id = req.user._id;
   const { avatar } = req.body;
   User.findByIdAndUpdate(id, { $set: { avatar } }, { new: true }).select(returnedFields)
