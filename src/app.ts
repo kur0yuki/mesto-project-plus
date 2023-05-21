@@ -1,6 +1,5 @@
 import express, { json, Request, Response } from 'express';
 import mongoose from 'mongoose';
-import http2 from 'http2';
 import router from './routes';
 
 const {
