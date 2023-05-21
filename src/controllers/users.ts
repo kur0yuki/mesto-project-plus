@@ -29,7 +29,7 @@ export const createUser = (req: Request, res: Response) => {
       });
     })
     .catch((e) => {
-      if (e instanceof Error.ValidationError || e instanceof Error.CastError) {
+      if (e instanceof Error.ValidationError) {
         return res.status(constants.HTTP_STATUS_BAD_REQUEST).send(getErrorResponse('Переданы некорректные данные'));
       }
       return res.status(constants.HTTP_STATUS_INTERNAL_SERVER_ERROR).send(getErrorResponse('Ошибка сервера'));

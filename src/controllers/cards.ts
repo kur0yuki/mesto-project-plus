@@ -46,6 +46,9 @@ export const deleteCardById = (req: Request, res: Response) => {
       if (e instanceof Error.DocumentNotFoundError) {
         return res.status(constants.HTTP_STATUS_NOT_FOUND).send(getErrorResponse('Запрашиваемая карточка не найдена'));
       }
+      if (e instanceof Error.CastError) {
+        return res.status(constants.HTTP_STATUS_BAD_REQUEST).send(getErrorResponse('Переданы некорректные данные'));
+      }
       return res.status(constants.HTTP_STATUS_INTERNAL_SERVER_ERROR).send(getErrorResponse('Ошибка сервера'));
     });
 };
