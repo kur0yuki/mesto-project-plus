@@ -1,7 +1,9 @@
 import { Request, Response } from 'express';
 import { Error } from 'mongoose';
+import { constants } from 'http2';
 import User from '../models/user';
 import getErrorResponse from '../ErrorMessage';
+import updater from './updater';
 
 const returnedFields = {
   __v: 0,
@@ -13,7 +15,7 @@ export const getUsers = (req: Request, res: Response) => {
       res.send(user);
     })
     .catch(() => {
-      res.status(500).send(getErrorResponse('Ошибка сервера'));
+      res.status(constants.HTTP_STATUS_INTERNAL_SERVER_ERROR).send(getErrorResponse('Ошибка сервера'));
     });
 };
 
@@ -27,47 +29,36 @@ export const createUser = (req: Request, res: Response) => {
       });
     })
     .catch((e) => {
-      if (e instanceof Error.ValidationError) {
-        return res.status(400).send(getErrorResponse('Переданы некорректные данные'));
+      if (e instanceof Error.ValidationError || e instanceof Error.CastError) {
+        return res.status(constants.HTTP_STATUS_BAD_REQUEST).send(getErrorResponse('Переданы некорректные данные'));
       }
-      return res.status(500).send(getErrorResponse('Ошибка сервера'));
+      return res.status(constants.HTTP_STATUS_INTERNAL_SERVER_ERROR).send(getErrorResponse('Ошибка сервера'));
     });
 };
 
 export const getUserById = (req: Request, res: Response) => {
   const id = req.params.userId;
-  User.findById(id, returnedFields)
-    .then((user) => {
-      if (!user) return res.status(404).send(getErrorResponse('Запрашиваемый пользователь не найден'));
-      return res.send(user);
-    })
-    .catch(() => {
-      res.status(500).send(getErrorResponse('Ошибка сервера'));
+  User.findById(id, returnedFields).orFail()
+    .then((user) => res.send(user))
+    .catch((e) => {
+      if (e instanceof Error.DocumentNotFoundError) {
+        return res.status(constants.HTTP_STATUS_NOT_FOUND).send(getErrorResponse('Запрашиваемый пользователь не найден'));
+      }
+      if (e instanceof Error.CastError) {
+        return res.status(constants.HTTP_STATUS_BAD_REQUEST).send(getErrorResponse('Переданы некорректные данные'));
+      }
+      return res.status(constants.HTTP_STATUS_INTERNAL_SERVER_ERROR).send(getErrorResponse('Ошибка сервера'));
     });
 };
 
 export const updateUser = (req: Request, res: Response) => {
   const id = req.user._id;
   const { name, about } = req.body;
-  User.findByIdAndUpdate(id, { $set: { name, about } }, { new: true }).select(returnedFields)
-    .then((user) => res.send(user))
-    .catch((e) => {
-      if (e instanceof Error.ValidationError) {
-        return res.status(400).send(getErrorResponse('Переданы некорректные данные'));
-      }
-      return res.status(500).send(getErrorResponse('Ошибка сервера'));
-    });
+  updater(User, id, { name, about }, res, 'Запрашиваемый пользователь не найден', returnedFields);
 };
 
 export const updateUserAvatar = (req: Request, res: Response) => {
   const id = req.user._id;
   const { avatar } = req.body;
-  User.findByIdAndUpdate(id, { $set: { avatar } }, { new: true }).select(returnedFields)
-    .then((user) => res.send(user))
-    .catch((e) => {
-      if (e instanceof Error.ValidationError) {
-        return res.status(400).send(getErrorResponse('Переданы некорректные данные'));
-      }
-      return res.status(500).send(getErrorResponse('Ошибка сервера'));
-    });
+  updater(User, id, { avatar }, res, 'Запрашиваемый пользователь не найден', returnedFields);
 };

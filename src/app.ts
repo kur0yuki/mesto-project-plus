@@ -1,7 +1,7 @@
 import express, { json, Request, Response } from 'express';
 import mongoose from 'mongoose';
-import userRouter from './routes/users';
-import cardRouter from './routes/cards';
+import http2 from 'http2';
+import router from './routes';
 
 const {
   PORT = 3000,
@@ -21,7 +21,6 @@ app.use((req: Request, res: Response, next) => {
   };
   next();
 });
-app.use('/users', userRouter);
-app.use('/cards', cardRouter);
+app.use('/', router);
 
 app.listen(PORT);
