@@ -10,7 +10,7 @@ export default (err: any, req: Request, res: Response, next: NextFunction) => {
   let customError: BaseError = err instanceof BaseError ? err : new BaseError('Ошибка сервера');
   if (err instanceof Error.DocumentNotFoundError) {
     customError = new NotFoundError(err.message);
-  } else if (err instanceof Error.ValidationError || err instanceof Error.CastError) {
+  } else if (err instanceof Error.ValidationError || err instanceof Error.CastError || err.code === 'ERR_ASSERTION') {
     customError = new BadRequestError();
   } else if (err.code === 11000) {
     customError = new DuplicateFieldError();
