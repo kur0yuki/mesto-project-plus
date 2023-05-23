@@ -1,13 +1,12 @@
-import mongoose, { Error } from 'mongoose';
-import { constants } from 'http2';
-import { Response } from 'express';
-import getErrorResponse from '../ErrorMessage';
+import mongoose from 'mongoose';
+import { NextFunction, Response } from 'express';
 
 const updater = (
   model: mongoose.Model<any>,
   id: string,
   updateQuery: object,
   res: Response,
+  next: NextFunction,
   notFoundText: string,
   selected?: Object,
   populated?: string,
@@ -16,15 +15,7 @@ const updater = (
     .select(selected).populate(populated || '', populated ? selected : '')
     .orFail()
     .then((item) => res.send(item))
-    .catch((e) => {
-      if (e instanceof Error.DocumentNotFoundError) {
-        return res.status(constants.HTTP_STATUS_NOT_FOUND).send(getErrorResponse(notFoundText));
-      }
-      if (e instanceof Error.ValidationError || e instanceof Error.CastError) {
-        return res.status(constants.HTTP_STATUS_BAD_REQUEST).send(getErrorResponse('Переданы некорректные данные'));
-      }
-      return res.status(constants.HTTP_STATUS_INTERNAL_SERVER_ERROR).send(getErrorResponse('Ошибка сервера'));
-    });
+    .catch(next);
 };
 
 export default updater;

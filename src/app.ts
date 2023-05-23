@@ -1,6 +1,10 @@
-import express, { json, Request, Response } from 'express';
+import express, { json } from 'express';
 import mongoose from 'mongoose';
+import cookieParser from 'cookie-parser';
+import { errors } from 'celebrate';
 import router from './routes';
+import errorMiddleware from './middlewares/error';
+import { requestLogger, errorLogger } from './middlewares/logger';
 
 const {
   PORT = 3000,
@@ -14,12 +18,13 @@ mongoose.set('strictQuery', false);
 mongoose.connect(`mongodb://${MONGODB_HOST}:${MONGODB_PORT}/mestodb`);
 
 app.use(json());
-app.use((req: Request, res: Response, next) => {
-  req.user = {
-    _id: '64680300567f7bbb5e8e2499',
-  };
-  next();
-});
+app.use(cookieParser());
+
+app.use(requestLogger);
 app.use('/', router);
+app.use(errorLogger);
+
+app.use(errors());
+app.use(errorMiddleware);
 
 app.listen(PORT);
