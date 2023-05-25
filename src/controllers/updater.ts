@@ -1,5 +1,7 @@
-import mongoose from 'mongoose';
+import mongoose, { Error } from 'mongoose';
 import { NextFunction, Response } from 'express';
+import NotFoundError from '../errors/NotFoundError';
+import BadRequestError from '../errors/BadRequestError';
 
 const updater = (
   model: mongoose.Model<any>,
@@ -15,7 +17,15 @@ const updater = (
     .select(selected).populate(populated || '', populated ? selected : '')
     .orFail()
     .then((item) => res.send(item))
-    .catch(next);
+    .catch((e) => {
+      if (e instanceof Error.DocumentNotFoundError) {
+        return next(new NotFoundError());
+      }
+      if (e instanceof Error.CastError) {
+        return next(new BadRequestError());
+      }
+      return next(e);
+    });
 };
 
 export default updater;

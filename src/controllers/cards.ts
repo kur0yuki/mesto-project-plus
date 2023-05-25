@@ -5,6 +5,7 @@ import updater from './updater';
 import NotFoundError from '../errors/NotFoundError';
 import BadRequestError from '../errors/BadRequestError';
 import ForbiddenError from '../errors/ForbiddenError';
+import { TRequest } from '../middlewares/auth';
 
 const returnedFields = {
   __v: 0,
@@ -19,7 +20,7 @@ export const getCards = (req: Request, res: Response, next: NextFunction) => {
     .catch(next);
 };
 
-export const createCard = (req: Request, res: Response, next: NextFunction) => {
+export const createCard = (req: TRequest, res: Response, next: NextFunction) => {
   const { name, link } = req.body;
 
   Card.create({ name, link, owner: req.user }).then((card) => {
@@ -37,10 +38,10 @@ export const createCard = (req: Request, res: Response, next: NextFunction) => {
   });
 };
 
-export const deleteCardById = (req: Request, res: Response, next: NextFunction) => {
+export const deleteCardById = (req: TRequest, res: Response, next: NextFunction) => {
   Card.findById(req.params.cardId, returnedFields).orFail()
     .then((card) => {
-      if (card.owner.toString() !== req.user._id) return next(new ForbiddenError());
+      if (card.owner.toString() !== req.user!._id) return next(new ForbiddenError());
       return card.populate(populatedFields, returnedFields)
         .then((populatedCard) => populatedCard.delete())
         .then((deletedCard) => res.send(deletedCard))
@@ -50,22 +51,25 @@ export const deleteCardById = (req: Request, res: Response, next: NextFunction) 
       if (e instanceof Error.DocumentNotFoundError) {
         return next(new NotFoundError('Запрашиваемая карточка не найдена'));
       }
+      if (e instanceof Error.CastError) {
+        return next(new BadRequestError());
+      }
       return next(e);
     });
 };
 
-export const addLike = (req: Request, res: Response, next: NextFunction) => {
+export const addLike = (req: TRequest, res: Response, next: NextFunction) => {
   updater(Card, req.params.cardId, {
     $addToSet: {
-      likes: req.user._id,
+      likes: req.user!._id,
     },
   }, res, next, 'Запрашиваемая карточка не найдена', returnedFields, populatedFields);
 };
 
-export const removeLike = (req: Request, res: Response, next: NextFunction) => {
+export const removeLike = (req: TRequest, res: Response, next: NextFunction) => {
   updater(Card, req.params.cardId, {
     $pull: {
-      likes: req.user._id,
+      likes: req.user!._id,
     },
   }, res, next, 'Запрашиваемая карточка не найдена', returnedFields, populatedFields);
 };

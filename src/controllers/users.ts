@@ -6,8 +6,9 @@ import User from '../models/user';
 import updater from './updater';
 import NotFoundError from '../errors/NotFoundError';
 import BadRequestError from '../errors/BadRequestError';
-import { KEY } from '../middlewares/auth';
+import { KEY, TRequest } from '../middlewares/auth';
 import DuplicateFieldError from '../errors/DuplicateFieldError';
+import UnauthorizedError from '../errors/UnauthorizedError';
 
 const returnedFields = {
   __v: 0,
@@ -63,20 +64,20 @@ export const getUserById = (req: Request, res: Response, next: NextFunction) => 
     });
 };
 
-export const updateUser = (req: Request, res: Response, next: NextFunction) => {
-  const id = req.user._id;
+export const updateUser = (req: TRequest, res: Response, next: NextFunction) => {
+  const id = req.user!._id;
   const { name, about } = req.body;
   updater(User, id, { name, about }, res, next, 'Запрашиваемый пользователь не найден', returnedFields);
 };
 
-export const updateUserAvatar = (req: Request, res: Response, next: NextFunction) => {
-  const id = req.user._id;
+export const updateUserAvatar = (req: TRequest, res: Response, next: NextFunction) => {
+  const id = req.user!._id;
   const { avatar } = req.body;
   updater(User, id, { avatar }, res, next, 'Запрашиваемый пользователь не найден', returnedFields);
 };
 
 export const login = (req: Request, res: Response, next: NextFunction) => {
-  const { email, password } = req.body;
+  const { email, password }:{email: string, password: string } = req.body;
 
   User.findUserByCredentials(email, password)
     .then((user) => {
@@ -87,11 +88,16 @@ export const login = (req: Request, res: Response, next: NextFunction) => {
         maxAge: 7 * 24 * 3600 * 1000,
       }).send({ success: true });
     })
-    .catch(next);
+    .catch((e) => {
+      if (e instanceof NotFoundError) {
+        return next(new UnauthorizedError());
+      }
+      return next(e);
+    });
 };
 
-export const getUserInfo = (req: Request, res: Response, next: NextFunction) => {
-  User.findById(req.user._id, returnedFields).orFail()
+export const getUserInfo = (req: TRequest, res: Response, next: NextFunction) => {
+  User.findById(req.user!._id, returnedFields).orFail()
     .then((user) => res.send(user))
     .catch((e) => {
       if (e instanceof Error.DocumentNotFoundError) return next(new NotFoundError('Пользователь не найден'));

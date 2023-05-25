@@ -1,15 +1,35 @@
-import { Request, Response, Router } from 'express';
-import http2 from 'http2';
+import {
+  NextFunction, Request, Response, Router,
+} from 'express';
+import { celebrate, Joi } from 'celebrate';
 import cardRouter from './cards';
 import userRouter from './users';
-import getErrorResponse from '../ErrorMessage';
 import auth from '../middlewares/auth';
+import { createUser, login } from '../controllers/users';
+import NotFoundError from '../errors/NotFoundError';
 
 const router = Router();
-router.use('/users', userRouter);
+
+router.post('/signin', celebrate({
+  body: Joi.object().keys({
+    email: Joi.string().email().required(),
+    password: Joi.string().required(),
+  }),
+}), login);
+router.post('/signup', celebrate({
+  body: Joi.object().keys({
+    email: Joi.string().email().required(),
+    password: Joi.string().required(),
+    name: Joi.string(),
+    avatar: Joi.string().uri(),
+    about: Joi.string(),
+  }),
+}), createUser);
+
 router.use(auth);
+router.use('/users', userRouter);
 router.use('/cards', cardRouter);
 
-router.use('*', (req: Request, res: Response) => res.status(http2.constants.HTTP_STATUS_NOT_FOUND).send(getErrorResponse('Страница не найдена')));
+router.use('*', (req: Request, res: Response, next: NextFunction) => next(new NotFoundError()));
 
 export default router;
